@@ -7,8 +7,7 @@ View charts, analyze price/volume data, and explore option chains — all in one
 
 ## 🚀 Live Demo (Click to Open)
 
-🔗 **https://YOUR-STREAMLIT-URL-HERE.streamlit.app**  
-*(Paste your Streamlit Cloud link here once deployed)*
+🔗 **https://stock-trader-quaden2307.streamlit.app/**  
 
 ---
 
