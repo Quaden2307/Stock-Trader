@@ -236,29 +236,3 @@ if stockname:
         st.info(f"No options data available for {stockname}.")  
     
 
-
-
-
-
-
-
-#btn1 = st.button("Button 1", key="btn1")
-#btn2 = st.button("Button 2", key="btn2")
-
-#st.markdown(
-#    """
-#    <style>
-#    /* First button on the page */
-#    div.stButton > button:first-child {
-#        height: 60px;
-#        background-color: green;
-#   }
-
-#    /* Second button on the page */
-#    div.stButton > button:nth-child(2) {
-#        height: 40px;
-#       background-color: orange;
-#    }
-#    </style>
-#    """,
-#    unsafe_allow_html=True
