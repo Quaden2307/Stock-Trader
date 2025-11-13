@@ -5,7 +5,6 @@ import yfinance as yf
 import plotly.express as px 
 import plotly.graph_objects as go
 
-from functions import add_funds, withdraw_funds
 
 st.set_page_config(page_title="Stock Trader", layout="wide")
 st.markdown("""
@@ -249,24 +248,63 @@ with default:
 
 
 #----- PORTFOLIO -----
+
 with portfolio:
     r1c1, r1c2, r1c3 = st.columns([1,2,1])
     r2c1, r2c2, r2c3 = st.columns([1,2,1])
-    r3c1, r3c2 = st.columns([1,1])
+
+    # initialize balance
+    if "balance" not in st.session_state:
+        st.session_state.balance = 100000.0
+
+    # initialize input
+    if "funds_amount" not in st.session_state:
+        st.session_state.funds_amount = ""
+
     with r1c1:
         st.title("Portfolio Management")
+
     with r1c2:
-        current_balance = 100000 
-        st.title(f"**Current Balance:** ${current_balance:,.2f}")   
+        st.title(f"**Current Balance:** ${st.session_state.balance:,.2f}")
+
     with r2c1:
-        fund_action = st.selectbox("Manage", ("Add Funds", "Withdraw Funds"))
+        st.session_state.fund_action = st.selectbox("Manage", ["Add Funds", "Withdraw Funds"])
+
     with r2c2:
-        st.text_input("Funds Amount")
-    
-    actions = {
-        "Add Funds": add_funds(),
-        "Withdraw Funds": withdraw_funds()
-    }
+        st.text_input("Funds Amount", key="funds_amount")
+
+    # --- CALLBACK FUNCTION ---
+    def process_funds():
+        try:
+            amount = float(st.session_state.funds_amount)
+            if amount <= 0:
+                st.session_state.status_msg = ("warning", "⚠️ Amount must be greater than 0.")
+                return
+
+            if st.session_state.fund_action == "Add Funds":
+                st.session_state.balance += amount
+            else:
+                st.session_state.balance -= amount
+
+            st.session_state.status_msg = ("success", f"{st.session_state.fund_action} successful!")
+
+            # clear input safely
+            st.session_state.funds_amount = ""
+
+        except ValueError:
+            st.session_state.status_msg = ("error", "⚠️ Please enter a valid number.")
+
+    with r2c3:
+        st.button("Submit", on_click=process_funds)
+
+    # Show message (if any)
+    if "status_msg" in st.session_state:
+        level, msg = st.session_state.status_msg
+        getattr(st, level)(msg)
+
+
+
+
 
 
 
