@@ -1,0 +1,4 @@
+- After adding funds/portfolio tabs, need to implement a graph that shows the change in balance fluctuation. Also need to add a section that shows each stock invested in (most
+likely represented in a table) 
+
+- Add colours such as green and red to show portfolio profits
