@@ -4,6 +4,7 @@ import numpy as np
 import yfinance as yf
 import plotly.express as px 
 import plotly.graph_objects as go
+import math
 
 
 st.set_page_config(page_title="Stock Trader", layout="wide")
@@ -29,7 +30,7 @@ with default:
     st.write("")
     st.write("")
 
-    r2c1, r2c2, r2c3, r2c4= st.columns([0.5,0.5,2,1])
+    r2c1, r2c2, r2c3, r2c4= st.columns([0.5,0.5,3,0.5])
 
     r3c1, r3c2 = st.columns([2,3])
 
@@ -66,17 +67,23 @@ with default:
         """
         <style>
         div.stButton > button:first-child {
-            background-color: #4CAF50;  /* Green button */
+            background-color: #2454AD;
             color: white;
             height: 70px;
-            width: 360px;
+            width: 180px;
             border-radius: 10px;
-            font-size: 18px;
+            font-size: 40px;
+            border: 3px solid transparent;  /* Transparent by default */
+        }
+        
+        div.stButton > button:first-child:hover {
+            border: 3px solid white;  /* White border on hover */
         }
         </style>
         """,
         unsafe_allow_html=True
     )
+
     with r2c4: 
         get_stock_data = st.button("Get Stock Data", key="get_stock_data")  
 
@@ -120,7 +127,7 @@ with default:
                 else:
                     st.write(f"**Current Price of {stockname}: ${new_price:.2f}**")   
     
-                st.write(f"Price Data for {stockname}:\n")
+                st.write(f"Price Data for {stockname}:")
                 st.write(current_price)
 
                 if period =="1d" and interval == "1h":
@@ -226,7 +233,7 @@ with default:
                     st.plotly_chart(fig, use_container_width=True)
 
 
-
+# Stock Options
     st.header("Stock Options")
     if stockname:
         stock = yf.Ticker(stockname)
@@ -250,12 +257,19 @@ with default:
 #----- PORTFOLIO -----
 
 with portfolio:
-    r1c1, r1c2, r1c3 = st.columns([1,2,1])
-    r2c1, r2c2, r2c3 = st.columns([1,2,1])
+    r1c1, r1c2, r1c3 = st.columns([1,2.5,0.5])
+    r2c1, r2c2, r2c3 = st.columns([1,2.5,0.5])
+    r3c1, r3c2, r3c3 = st.columns([1,2.5,0.5])
+    r4c1, r4c2, r4c3, r4c4 = st.columns([1,1,1,0.43])
+    r5c1, r5c2 = st.columns([1,3])
 
     # persistent balance
     if "balance" not in st.session_state:
         st.session_state.balance = 100000.0
+
+    # Initialize stockbalance
+    if "stockbalance" not in st.session_state:
+        st.session_state.stockbalance = 0
 
     # callback for submit button
     def process_funds():
@@ -284,6 +298,9 @@ with portfolio:
 
     with r1c2:
         st.title(f"Current Balance: ${st.session_state.balance:,.2f}")
+    
+    with r1c3:
+        st.button("Reset", on_click=lambda: st.session_state.clear()) 
 
     with r2c1:
         st.selectbox("Manage", ["Add Funds", "Withdraw Funds"], key="fund_action")
@@ -298,10 +315,120 @@ with portfolio:
         level, msg = st.session_state.status
         getattr(st, level)(msg)
 
+#----BUY/SELL STOCKS-----
+
+    #MANUAL RESETS
+    #st.session_state.portfolio_df = pd.DataFrame(columns=['Stock', 'Shares', 'Total Cost'])
+    #st.session_state.balance = 100000.0  
+    #st.session_state.stockbalance = 0
+
+    with r3c1:
+        st.header("Buy/Sell Stocks")
+
+    with r3c2:
+        st.title(f"Balance: ${st.session_state.stockbalance:,.2f}")           
+
+    with r4c1:
+        trade_stock_input = st.text_input("Stock Ticker Symbol:", key="trade_stock_input")
+
+    with r4c2:
+        st.number_input("Shares:", min_value=1, step=1, key="trade_quantity") 
+
+    with r4c3:
+        st.selectbox("Action:", ["Buy", "Sell"], key="trade_action")
+
+    # Display trade messages if they exist
+    if "trade_message" in st.session_state:
+        msg_type, msg_text = st.session_state.trade_message
+        if msg_type == "success":
+            st.success(msg_text)
+        elif msg_type == "error":
+            st.error(msg_text)
+        elif msg_type == "warning":
+            st.warning(msg_text)
+        # Clear message after displaying
+        del st.session_state.trade_message
+
+    #Initialize portfolio dataframe
+    if "portfolio_df" not in st.session_state:
+        st.session_state.portfolio_df = pd.DataFrame(columns=['Stock', 'Shares', 'Total Cost'])
 
 
+    def execute_trade():
+        stock_symbol = st.session_state.trade_stock_input.upper()
+        quantity = st.session_state.trade_quantity
+        action = st.session_state.trade_action
 
+        if not stock_symbol:
+            st.session_state.trade_message = ("warning", "Enter a stock ticker symbol.")
+            return
 
+        try:
+            stock = yf.Ticker(stock_symbol)
+            current_price = stock.history(period="1d")['Close'].iloc[-1]
+        except Exception as e:
+            st.session_state.trade_message = ("error", f"Error retrieving data for {stock_symbol}: Please enter a valid stock symbol")
+            return
+
+        total_cost = current_price * quantity
+
+        if action == "Buy":
+            if total_cost > st.session_state.balance:
+                st.session_state.trade_message = ("error", "Insufficient balance to complete the purchase.")
+                return
+            else:
+                st.session_state.balance -= total_cost
+                st.session_state.stockbalance += total_cost
+                st.session_state.trade_message = ("success", f"Bought {quantity} shares of {stock_symbol} at \\${current_price:.2f} each for a total of \\${total_cost:.2f}.")
+
+        else:  # Sell
+            if total_cost > st.session_state.stockbalance:
+                st.session_state.trade_message = ("error", "Insufficient stock value to sell.")
+                return 
+            else:
+                st.session_state.balance += total_cost
+                st.session_state.stockbalance -= total_cost
+                st.session_state.trade_message = ("success", f"Sold {quantity} shares of {stock_symbol} at \\${current_price:.2f} each for a total of \\${total_cost:.2f}.")
+        
+        stock_exists = st.session_state.portfolio_df["Stock"].isin([stock_symbol]).any()
+    
+        #----- UPDATE PORTFOLIO DATAFRAME -----
+        if action == "Buy":
+            if stock_exists:
+                # Update existing position
+                idx = st.session_state.portfolio_df[st.session_state.portfolio_df["Stock"] == stock_symbol].index[0]
+                st.session_state.portfolio_df.loc[idx, "Shares"] += quantity
+                st.session_state.portfolio_df.loc[idx, "Total Cost"] += total_cost
+            else:
+                st.session_state.portfolio_df.loc[len(st.session_state.portfolio_df)] = [stock_symbol, quantity, total_cost]
+
+        else:  # Sell
+            if not stock_exists:
+                st.session_state.trade_message = ("error", f"You don't own any shares of {stock_symbol}.")
+                return
+            
+            idx = st.session_state.portfolio_df[st.session_state.portfolio_df["Stock"] == stock_symbol].index[0]
+            current_shares = st.session_state.portfolio_df.loc[idx, "Shares"]
+            
+            if quantity > current_shares:
+                st.session_state.trade_message = ("error", f"You only own {current_shares} shares of {stock_symbol}.")
+                return
+            
+            # Update shares and cost
+            st.session_state.portfolio_df.loc[idx, "Shares"] -= quantity
+            st.session_state.portfolio_df.loc[idx, "Total Cost"] -= total_cost
+            
+            # Remove row if no shares left
+            if st.session_state.portfolio_df.loc[idx, "Shares"] == 0:
+                st.session_state.portfolio_df = st.session_state.portfolio_df.drop(idx).reset_index(drop=True)
+
+    with r4c4:
+        st.button("Execute Trade", on_click=execute_trade)
+
+        
+    with r5c1:
+        if len(st.session_state.portfolio_df) > 0:
+            st.dataframe(st.session_state.portfolio_df, use_container_width=True)
 
 
 #streamlit run app.py

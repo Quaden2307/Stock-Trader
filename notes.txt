@@ -2,3 +2,4 @@
 likely represented in a table) 
 - Add colours such as green and red to show portfolio profits
 - Add transaction history log
+- Make buy/sell stocks balance record balance and compare profits/losses across time periods
