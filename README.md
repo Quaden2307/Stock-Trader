@@ -2,7 +2,7 @@
 
 A modern, futuristic stock screener and portfolio management application built with React, TypeScript, and FastAPI. Features real-time stock data visualization, interactive charts, and portfolio management capabilities.
 
-![Stock Trader](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.120.3-green) ![Python](https://img.shields.io/badge/Python-3.8+-green)
+![Stock Trader] ![TypeScript] ![FastAPI] ![Python]
 
 ## 🌐 Live Demo
 
