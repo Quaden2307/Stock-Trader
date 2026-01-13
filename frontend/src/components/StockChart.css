@@ -1,0 +1,10 @@
+.stock-chart {
+  width: 100%;
+}
+
+.chart-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}

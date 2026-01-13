@@ -1,0 +1,17 @@
+# Render.com deployment configuration
+# This file makes deployment even easier - just connect your GitHub repo to Render
+# and it will automatically use these settings
+
+services:
+  - type: web
+    name: stock-trader
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHONUNBUFFERED
+        value: 1
+    # Health check (optional - keeps app warm)
+    healthCheckPath: /api/portfolio
