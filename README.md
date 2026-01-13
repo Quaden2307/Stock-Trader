@@ -2,11 +2,8 @@
 
 A modern, futuristic stock screener and portfolio management application built with React, TypeScript, and FastAPI. Features real-time stock data visualization, interactive charts, and portfolio management capabilities.
 
-![Stock Trader] ![TypeScript] ![FastAPI] ![Python]
 
-## 🌐 Live Demo
-
-🔗 **[View Live Application](https://stock-trader-deploy.onrender.com/)** *(Update this with your deployed URL)*
+[View Live Application](https://stock-trader-deploy.onrender.com/)
 
 **No installation required!** Just click the link above to try it out. Perfect for employers and recruiters to see your work instantly.
 
