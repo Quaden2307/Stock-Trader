@@ -96,8 +96,12 @@ function Portfolio() {
     }
   };
 
-  if (!portfolio) {
+  if (!portfolio && !error) {
     return <div className="loading">Loading portfolio...</div>;
+  }
+
+  if (!portfolio && error) {
+    return <div className="loading">{error}</div>;
   }
 
   return (

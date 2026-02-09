@@ -30,35 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static files (frontend) in production
-# Check if frontend/dist exists (Docker production build)
-frontend_dist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
-if os.path.exists(frontend_dist_path):
-    # Mount static assets (JS, CSS, images)
-    assets_path = os.path.join(frontend_dist_path, "assets")
-    if os.path.exists(assets_path):
-        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
-    
-    # Serve index.html for root and all non-API routes (SPA routing)
-    @app.get("/")
-    async def serve_index():
-        index_path = os.path.join(frontend_dist_path, "index.html")
-        if os.path.exists(index_path):
-            return FileResponse(index_path)
-        raise HTTPException(status_code=404, detail="Frontend not found")
-    
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        # Don't serve frontend for API routes or docs
-        if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("assets"):
-            raise HTTPException(status_code=404, detail="Not found")
-        
-        # Serve index.html for all other routes (SPA routing)
-        index_path = os.path.join(frontend_dist_path, "index.html")
-        if os.path.exists(index_path):
-            return FileResponse(index_path)
-        raise HTTPException(status_code=404, detail="Frontend not found")
-
 # In-memory storage for portfolio (in production, use a database)
 portfolio_state = {
     "balance": 100000.0,
@@ -202,16 +173,24 @@ async def get_option_chain(ticker: str, date: str):
         calls_dict = option_chain.calls.to_dict('records')
         puts_dict = option_chain.puts.to_dict('records')
         
-        # Clean NaN values from dictionaries
+        # Clean NaN/NaT values and convert non-serializable types for JSON
         def clean_nan(obj):
             if isinstance(obj, dict):
                 return {k: clean_nan(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [clean_nan(item) for item in obj]
+            elif obj is pd.NaT:
+                return None
             elif isinstance(obj, (float, np.floating)):
-                if pd.isna(obj) or np.isnan(obj) or pd.isnull(obj):
+                if pd.isna(obj):
                     return None
-                return obj
+                return float(obj)
+            elif isinstance(obj, (np.integer,)):
+                return int(obj)
+            elif isinstance(obj, (np.bool_,)):
+                return bool(obj)
+            elif isinstance(obj, pd.Timestamp):
+                return obj.isoformat()
             return obj
         
         calls = clean_nan(calls_dict)
@@ -328,3 +307,33 @@ async def reset_portfolio():
     portfolio_state["stock_balance"] = 0.0
     portfolio_state["holdings"] = []
     return {"message": "Portfolio reset successfully", "portfolio": portfolio_state}
+
+# Serve static files (frontend) in production
+# IMPORTANT: This must be registered AFTER all API routes so the catch-all
+# does not intercept API requests.
+frontend_dist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(frontend_dist_path):
+    # Mount static assets (JS, CSS, images)
+    assets_path = os.path.join(frontend_dist_path, "assets")
+    if os.path.exists(assets_path):
+        app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
+
+    # Serve index.html for root and all non-API routes (SPA routing)
+    @app.get("/")
+    async def serve_index():
+        index_path = os.path.join(frontend_dist_path, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        raise HTTPException(status_code=404, detail="Frontend not found")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # Don't serve frontend for API routes or docs
+        if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json") or full_path.startswith("assets"):
+            raise HTTPException(status_code=404, detail="Not found")
+
+        # Serve index.html for all other routes (SPA routing)
+        index_path = os.path.join(frontend_dist_path, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+        raise HTTPException(status_code=404, detail="Frontend not found")
